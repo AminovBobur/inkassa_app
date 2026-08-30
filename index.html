@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inkassa App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Excel bilan ishlash uchun SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Yandex Maps'dan oldin ushbu Telegram skriptini qo'shing -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Yandex Maps API -->
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=API_KEY_BUYERGA" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+    <div id="app-content">
+
+        <!-- 1-OYNA: BAZA -->
+        <section id="view-baza" class="view">
+            <header class="page-header">
+                <h2>🏧 Baza</h2>
+                <div id="baza-actions" class="btn-group"></div>
+            </header>
+            <div class="stats-bar">
+                <span>Jami bankomatlar: <strong id="baza-total-count">0</strong> ta</span>
+            </div>
+            <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="display: none;">
+            <div id="baza-list" class="list-container"></div>
+        </section>
+
+        <!-- 2-OYNA: MARSHRUT -->
+        <section id="view-marshrut" class="view active">
+            <header class="page-header">
+                <h2>📋 Marshrut</h2>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="openSelectModal()">Belgilash</button>
+                    <button class="btn btn-danger" onclick="clearMarshrutData()">Tozalash</button>
+                </div>
+            </header>
+            <div class="stats-bar">
+                <span>Jami: <strong id="m-total">0</strong> | Bajarildi: <strong id="m-done">0</strong> | Qoldi: <strong
+                        id="m-left">0</strong></span>
+            </div>
+            <div id="marshrut-list" class="list-container"></div>
+        </section>
+
+        <!-- 3-OYNA: TARIX -->
+        <section id="view-tarix" class="view">
+            <header class="page-header">
+                <h2>📜 Tarix</h2>
+                <button class="btn btn-danger" onclick="clearTarixData()">Tozalash</button>
+            </header>
+            <div class="stats-bar">
+                <span>Jami bajarildi: <strong id="tarix-total-count">0</strong> ta</span>
+            </div>
+            <div id="tarix-list" class="list-container"></div>
+        </section>
+
+        <!-- 4-OYNA: XARITA -->
+        <section id="view-xarita" class="view">
+            <div id="yandex-map"></div>
+
+            <!-- GPS Telegram Samolyotcha Icon -->
+            <button id="btn-gps" onclick="locateUser()" title="Mening joylashuvim">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+            </button>
+        </section>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <button class="nav-item" data-target="view-baza">
+            <span class="icon">🏧</span>
+            <span class="label">Baza</span>
+        </button>
+        <button class="nav-item active" data-target="view-marshrut">
+            <span class="icon">📋</span>
+            <span class="label">Marshrut</span>
+        </button>
+        <button class="nav-item" data-target="view-tarix">
+            <span class="icon">📜</span>
+            <span class="label">Tarix</span>
+        </button>
+        <button class="nav-item" data-target="view-xarita">
+            <span class="icon">🗺️</span>
+            <span class="label">Xarita</span>
+        </button>
+    </nav>
+
+    <!-- MODAL: MARSHRUTGA BELGILASH -->
+    <div id="select-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Marshrut uchun bankomatlarni tanlang</h3>
+            <div id="select-checkbox-list" class="checkbox-list"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveSelectedMarshrut()">Saqlash</button>
+                <button class="btn btn-secondary" onclick="closeSelectModal()">Bekor qilish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRMATION -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <p id="confirm-message">Ushbu amalni bajarmoqchimisiz?</p>
+            <div class="modal-footer">
+                <button id="confirm-yes-btn" class="btn btn-danger">Ha</button>
+                <button onclick="closeConfirmModal()" class="btn btn-secondary">Yo'q</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,361 @@
+let db = {
+    baza: JSON.parse(localStorage.getItem('inkassa_baza')) || [],
+    marshrutIds: JSON.parse(localStorage.getItem('inkassa_marshrut')) || [],
+    tarix: JSON.parse(localStorage.getItem('inkassa_tarix')) || []
+};
+
+let myMap = null;
+let locationControl = null;
+let pendingConfirmAction = null;
+
+window.onload = function () {
+    setupNavigation();
+    setupExcelImport();
+    renderAllViews();
+    initYandexMap();
+};
+
+function saveData() {
+    localStorage.setItem('inkassa_baza', JSON.stringify(db.baza));
+    localStorage.setItem('inkassa_marshrut', JSON.stringify(db.marshrutIds));
+    localStorage.setItem('inkassa_tarix', JSON.stringify(db.tarix));
+    renderAllViews();
+}
+
+function setupNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            switchTab(item.getAttribute('data-target'));
+        });
+    });
+}
+
+function switchTab(targetId) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+    const activeNav = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+    if (activeNav) activeNav.classList.add('active');
+
+    const activeView = document.getElementById(targetId);
+    if (activeView) activeView.classList.add('active');
+
+    if (targetId === 'view-xarita' && myMap) {
+        myMap.container.fitToViewport();
+        updateMapMarkers();
+    }
+}
+
+function renderAllViews() {
+    renderBazaView();
+    renderMarshrutView();
+    renderTarixView();
+    if (myMap) updateMapMarkers();
+}
+
+// 1-OYNA: BAZA RENDER
+function renderBazaView() {
+    const actionsEl = document.getElementById('baza-actions');
+    const countEl = document.getElementById('baza-total-count');
+    const listEl = document.getElementById('baza-list');
+
+    countEl.innerText = db.baza.length;
+
+    if (db.baza.length === 0) {
+        actionsEl.innerHTML = `<button class="btn btn-primary" onclick="triggerFileInput()">Import</button>`;
+    } else {
+        actionsEl.innerHTML = `
+      <button class="btn btn-success" onclick="exportExcel()">Export</button>
+      <button class="btn btn-danger" onclick="clearFullSystem()">Tozalash</button>
+    `;
+    }
+
+    listEl.innerHTML = '';
+    db.baza.forEach(atm => {
+        const card = document.createElement('div');
+        card.className = 'atm-card';
+        card.style.borderLeftColor = atm.color || '#2563eb';
+        card.innerHTML = `
+      <div class="atm-info">
+        <span class="color-dot" style="background:${atm.color || '#2563eb'}"></span>
+        <span class="atm-name">#${atm.id}. ${atm.name}</span>
+      </div>
+    `;
+        listEl.appendChild(card);
+    });
+}
+
+function triggerFileInput() {
+    document.getElementById('excel-file-input').click();
+}
+
+function setupExcelImport() {
+    document.getElementById('excel-file-input').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                db.baza = jsonData.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    color: item.color || '#FF0000',
+                    lat: parseFloat(item.lat),
+                    lng: parseFloat(item.lng)
+                }));
+
+                saveData();
+                alert("Excel muvaffaqiyatli import qilindi!");
+            } catch (err) {
+                alert("Excel faylini o'qishda xatolik! Ustunlar: id, name, color, lat, lng bo'lishi kerak.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        this.value = '';
+    });
+}
+
+function exportExcel() {
+    if (db.baza.length === 0) return;
+    const worksheet = XLSX.utils.json_to_sheet(db.baza);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Bankomatlar");
+    XLSX.writeFile(workbook, "Bankomatlar_Baza.xlsx");
+}
+
+function clearFullSystem() {
+    showConfirm("Haqiqatan ham barcha bazani va ma'lumotlarni o'chirib, dasturni 0 holatiga qaytarmoqchimisiz?", function () {
+        db.baza = [];
+        db.marshrutIds = [];
+        db.tarix = [];
+        saveData();
+    });
+}
+
+// 2-OYNA: MARSHRUT RENDER
+function renderMarshrutView() {
+    const listEl = document.getElementById('marshrut-list');
+    const activeMarshrut = db.baza.filter(a => db.marshrutIds.includes(a.id) && !db.tarix.some(t => t.id === a.id));
+    const doneCount = db.marshrutIds.filter(id => db.tarix.some(t => t.id === id)).length;
+
+    document.getElementById('m-total').innerText = db.marshrutIds.length;
+    document.getElementById('m-done').innerText = doneCount;
+    document.getElementById('m-left').innerText = activeMarshrut.length;
+
+    listEl.innerHTML = '';
+    activeMarshrut.forEach(atm => {
+        const card = document.createElement('div');
+        card.className = 'atm-card';
+        card.style.borderLeftColor = atm.color;
+        card.innerHTML = `
+      <div class="atm-info">
+        <span class="color-dot" style="background:${atm.color}"></span>
+        <span class="atm-name">#${atm.id}. ${atm.name}</span>
+      </div>
+      <div class="atm-actions">
+        <button class="btn-icon-map" title="Xaritada ko'rish" onclick="showOnMap(${atm.id})">🗺️</button>
+        <button class="btn btn-success" onclick="confirmInkassa(${atm.id})">Inkassa</button>
+      </div>
+    `;
+        listEl.appendChild(card);
+    });
+}
+
+function openSelectModal() {
+    const listEl = document.getElementById('select-checkbox-list');
+    listEl.innerHTML = '';
+
+    if (db.baza.length === 0) {
+        alert("Avval Baza bo'limida Excel fayl import qiling!");
+        return;
+    }
+
+    db.baza.forEach(atm => {
+        const isChecked = db.marshrutIds.includes(atm.id) ? 'checked' : '';
+        const item = document.createElement('label');
+        item.className = 'checkbox-item';
+        item.innerHTML = `
+      <input type="checkbox" value="${atm.id}" ${isChecked}>
+      <span class="color-dot" style="background:${atm.color}"></span>
+      <span>#${atm.id}. ${atm.name}</span>
+    `;
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('select-modal').classList.remove('hidden');
+}
+
+function closeSelectModal() {
+    document.getElementById('select-modal').classList.add('hidden');
+}
+
+function saveSelectedMarshrut() {
+    const checkboxes = document.querySelectorAll('#select-checkbox-list input[type="checkbox"]');
+    const selected = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) selected.push(parseInt(cb.value));
+    });
+
+    db.marshrutIds = selected;
+    saveData();
+    closeSelectModal();
+}
+
+function clearMarshrutData() {
+    showConfirm("Haqiqatan ham bugungi marshrutni tozalamoqchimisiz?", function () {
+        db.marshrutIds = [];
+        saveData();
+    });
+}
+
+// 3-OYNA: TARIX RENDER
+function renderTarixView() {
+    const listEl = document.getElementById('tarix-list');
+    const countEl = document.getElementById('tarix-total-count');
+
+    countEl.innerText = db.tarix.length;
+    listEl.innerHTML = '';
+
+    const reversedTarix = [...db.tarix].reverse();
+
+    reversedTarix.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'tarix-item';
+        el.innerText = `${item.time} — #${item.id}. ${item.name}`;
+        listEl.appendChild(el);
+    });
+}
+
+function clearTarixData() {
+    showConfirm("Haqiqatan ham inkassa tarixini tozalamoqchimisiz?", function () {
+        db.tarix = [];
+        saveData();
+    });
+}
+
+function confirmInkassa(id) {
+    showConfirm("Ushbu bankomatni inkassa qildingizmi?", function () {
+        const atm = db.baza.find(a => a.id === id);
+        if (!atm) return;
+
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+        db.tarix.push({
+            id: atm.id,
+            name: atm.name,
+            time: timeStr
+        });
+
+        saveData();
+    });
+}
+
+function showConfirm(msg, yesCallback) {
+    document.getElementById('confirm-message').innerText = msg;
+    pendingConfirmAction = yesCallback;
+    document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    pendingConfirmAction = null;
+}
+
+document.getElementById('confirm-yes-btn').addEventListener('click', function () {
+    if (pendingConfirmAction) pendingConfirmAction();
+    closeConfirmModal();
+});
+
+// 4-OYNA: YANDEX MAPS VA GEOLOKATSIYA
+function initYandexMap() {
+    ymaps.ready(() => {
+        myMap = new ymaps.Map("yandex-map", {
+            center: [37.2242, 67.2783],
+            zoom: 13,
+            controls: []
+        });
+
+        locationControl = new ymaps.control.GeolocationControl({
+            options: { noPlacemark: false, visible: false }
+        });
+        myMap.controls.add(locationControl);
+
+        updateMapMarkers();
+    });
+}
+
+function updateMapMarkers() {
+    if (!myMap) return;
+    myMap.geoObjects.removeAll();
+
+    const activeAtms = db.baza.filter(a => db.marshrutIds.includes(a.id) && !db.tarix.some(t => t.id === a.id));
+
+    activeAtms.forEach(atm => {
+        const placemark = new ymaps.Placemark([atm.lat, atm.lng], {
+            balloonContentHeader: `<b>#${atm.id}. ${atm.name}</b>`,
+            balloonContentBody: `
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button style="padding:6px 10px; background:#16a34a; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="confirmInkassa(${atm.id})">Inkassa qilish</button>
+          <button style="padding:6px 10px; background:#2563eb; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="openYandexNavi(${atm.lat}, ${atm.lng})">Marshrut</button>
+        </div>
+      `
+        }, {
+            preset: 'islands#icon',
+            iconColor: atm.color || '#FF0000'
+        });
+
+        myMap.geoObjects.add(placemark);
+    });
+}
+
+function showOnMap(id) {
+    const atm = db.baza.find(a => a.id === id);
+    if (!atm) return;
+
+    switchTab('view-xarita');
+
+    if (myMap) {
+        myMap.setCenter([atm.lat, atm.lng], 16, { duration: 400 });
+
+        myMap.geoObjects.each(geoObj => {
+            const coords = geoObj.geometry.getCoordinates();
+            if (coords && coords[0] === atm.lat && coords[1] === atm.lng) {
+                geoObj.balloon.open();
+            }
+        });
+    }
+}
+
+function openYandexNavi(lat, lng) {
+    window.open(`https://yandex.ru/maps/?rtext=~${lat},${lng}&rtt=auto`, '_blank');
+}
+
+function locateUser() {
+    if (locationControl) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+                myMap.setCenter([userLat, userLng], 15, { duration: 500 });
+            },
+            (err) => {
+                alert("GPS geolokatsiyani aniqlab bo'lmadi. Telefon geolokatsiyasi yoqilganini tekshiring.");
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    }
+}
+
+// Telegram oynasini to'liq ekranga yoyish va tayyor holatga keltirish
+if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand(); // Ilovani to'liq ekranda ochish
+}
