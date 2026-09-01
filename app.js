@@ -338,24 +338,80 @@ function openYandexNavi(lat, lng) {
     window.open(`https://yandex.ru/maps/?rtext=~${lat},${lng}&rtt=auto`, '_blank');
 }
 
+// function locateUser() {
+//     if (locationControl) {
+//         navigator.geolocation.getCurrentPosition(
+//             (pos) => {
+//                 const userLat = pos.coords.latitude;
+//                 const userLng = pos.coords.longitude;
+//                 myMap.setCenter([userLat, userLng], 15, { duration: 500 });
+//             },
+//             (err) => {
+//                 alert("GPS geolokatsiyani aniqlab bo'lmadi. Telefon geolokatsiyasi yoqilganini tekshiring.");
+//             },
+//             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+//         );
+//     }
+// }
+
+// Foydalanuvchi joylashuvini xotirada saqlash va icon obyektini ushlab turish uchun o'zgaruvchilar
+let userLocation = null;
+let userPlacemark = null;
+
 function locateUser() {
-    if (locationControl) {
+    // 1. Agar joylashuv avval aniqlangan bo'lsa, qayta ruxsat so'ramaymiz
+    if (userLocation) {
+        myMap.setCenter(userLocation, 16, { checkZoomRange: true, duration: 300 });
+        showUserMarker(userLocation);
+        return;
+    }
+
+    // 2. Birinchi marta bosilganda brauzerdan ruxsat so'raymiz
+    if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const userLat = pos.coords.latitude;
-                const userLng = pos.coords.longitude;
-                myMap.setCenter([userLat, userLng], 15, { duration: 500 });
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                userLocation = [lat, lng]; // Xotiraga saqlaymiz
+
+                // Xaritaning markazini suramiz
+                myMap.setCenter(userLocation, 16, { checkZoomRange: true, duration: 300 });
+
+                // Icon (Marker) qo'shamiz
+                showUserMarker(userLocation);
             },
-            (err) => {
+            (error) => {
                 alert("GPS geolokatsiyani aniqlab bo'lmadi. Telefon geolokatsiyasi yoqilganini tekshiring.");
+                console.error(error);
             },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            { enableHighAccuracy: true }
         );
+    } else {
+        alert("Brauzeringizda Geolocation qo'llab-quvvatlanmaydi.");
     }
 }
 
-// Telegram oynasini to'liq ekranga yoyish va tayyor holatga keltirish
-if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand(); // Ilovani to'liq ekranda ochish
+// Xaritaga foydalanuvchi iconini chiqaruvchi funksiya
+function showUserMarker(coords) {
+    // Agar icon avval yaratilgan bo'lsa, shunchaki o'rnini yangilaymiz
+    if (userPlacemark) {
+        userPlacemark.geometry.setCoordinates(coords);
+    } else {
+        // Yangi ajralib turuvchi ko'k icon yaratamiz
+        userPlacemark = new ymaps.Placemark(
+            coords,
+            { hintContent: 'Sizning joylashuvinigiz' },
+            {
+                preset: 'islands#circleDotIcon', // Nuqtali doira shaklidagi standart icon
+                iconColor: '#1E88E5'           // Yorqin ko'k rang
+            }
+        );
+        myMap.geoObjects.add(userPlacemark);
+    }
 }
+
+// // Telegram oynasini to'liq ekranga yoyish va tayyor holatga keltirish
+// if (window.Telegram && window.Telegram.WebApp) {
+//     window.Telegram.WebApp.ready();
+//     window.Telegram.WebApp.expand(); // Ilovani to'liq ekranda ochish
+// }
