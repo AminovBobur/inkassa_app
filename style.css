@@ -276,3 +276,54 @@ html {
     gap: 10px;
     margin-top: 10px;
 }
+
+/* GURUHLASH STYLES */
+.group-wrapper {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #edf2f7;
+    font-size: 0.95rem;
+    color: #2d3748;
+}
+
+.group-title-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.accordion-icon {
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #718096;
+    padding: 4px;
+}
+
+.group-items {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.group-items.hidden {
+    display: none;
+}
