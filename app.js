@@ -1,41 +1,9 @@
-// 1. Ruxsat berilgan Telegram foydalanuvchilarining ID lari
-const ALLOWED_TELEGRAM_IDS = [
-  1347548152, // Bobur
-  5013974621, // Jurabek Akam
-];
-
-// 2. Telegram WebApp obyektini tekshirish
 const tg = window.Telegram ? window.Telegram.WebApp : null;
 
-function checkAccess() {
-  // // Agar foydalanuvchi Telegram ichidan kirmagan bo'lsa
-  // if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-  //   document.body.innerHTML = `
-  //           <div style="display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; font-family:sans-serif;">
-  //               <h2 style="color:#dc2626;">❌ Ruxsat berilmagan! <br><br> Bu ilovadan faqat Telegram Bot orqali foydalanish mumkin.</h2>
-  //           </div>
-  //       `;
-  //   return false;
-  // }
-
-  // const currentUserId = tg.initDataUnsafe.user.id;
-
-  // // Agar foydalanuvchi ID si ruxsat berilganlar ro'yxatida bo'lmasa
-  // if (!ALLOWED_TELEGRAM_IDS.includes(currentUserId)) {
-  //   document.body.innerHTML = `
-  //           <div style="display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; font-family:sans-serif;">
-  //               <h2 style="color:#dc2626;">🚫 Kirish taqiqlangan! <br><br> Sizning Telegram ID (${currentUserId}) ushbu tizimga ulangan emas.</h2>
-  //           </div>
-  //       `;
-  //   return false;
-  // }
-
-  return true;
-}
-
-// Sahifa yuklanishidan oldin tekshiramiz
-if (!checkAccess()) {
-  throw new Error("Ruxsatsiz kirishga urunish to'xtatildi.");
+// Telegram oynasini to'liq ekranga yoyish
+if (tg) {
+  tg.ready();
+  tg.expand();
 }
 
 let db = {
@@ -573,10 +541,4 @@ function showUserMarker(coords) {
     );
     myMap.geoObjects.add(userPlacemark);
   }
-}
-
-// Telegram oynasini to'liq ekranga yoyish va tayyor holatga keltirish
-if (window.Telegram && window.Telegram.WebApp) {
-  window.Telegram.WebApp.ready();
-  window.Telegram.WebApp.expand(); // Ilovani to'liq ekranda ochish
 }
