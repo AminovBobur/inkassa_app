@@ -338,22 +338,6 @@ function openYandexNavi(lat, lng) {
     window.open(`https://yandex.ru/maps/?rtext=~${lat},${lng}&rtt=auto`, '_blank');
 }
 
-// function locateUser() {
-//     if (locationControl) {
-//         navigator.geolocation.getCurrentPosition(
-//             (pos) => {
-//                 const userLat = pos.coords.latitude;
-//                 const userLng = pos.coords.longitude;
-//                 myMap.setCenter([userLat, userLng], 15, { duration: 500 });
-//             },
-//             (err) => {
-//                 alert("GPS geolokatsiyani aniqlab bo'lmadi. Telefon geolokatsiyasi yoqilganini tekshiring.");
-//             },
-//             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-//         );
-//     }
-// }
-
 // Foydalanuvchi joylashuvini xotirada saqlash va icon obyektini ushlab turish uchun o'zgaruvchilar
 let userLocation = null;
 let userPlacemark = null;
@@ -410,8 +394,8 @@ function showUserMarker(coords) {
     }
 }
 
-// // Telegram oynasini to'liq ekranga yoyish va tayyor holatga keltirish
-// if (window.Telegram && window.Telegram.WebApp) {
-//     window.Telegram.WebApp.ready();
-//     window.Telegram.WebApp.expand(); // Ilovani to'liq ekranda ochish
-// }
+// Telegram oynasini to'liq ekranga yoyish va tayyor holatga keltirish
+if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand(); // Ilovani to'liq ekranda ochish
+}
