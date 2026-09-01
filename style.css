@@ -1,329 +1,359 @@
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body,
 html {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: #f3f4f6;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #f3f4f6;
 }
 
 #app-content {
-    height: calc(100% - 60px);
-    width: 100%;
-    position: relative;
+  height: calc(100% - 60px);
+  width: 100%;
+  position: relative;
 }
 
 .view {
-    display: none;
-    height: 100%;
-    width: 100%;
-    overflow-y: auto;
-    padding: 12px;
-    padding-bottom: 20px;
+  display: none;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  padding: 12px;
+  padding-bottom: 20px;
 }
 
 .view.active {
-    display: block;
+  display: block;
 }
 
 #view-xarita {
-    padding: 0;
-    position: relative;
+  padding: 0;
+  position: relative;
 }
 
 #yandex-map {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    background: white;
-    padding: 12px;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .btn-group {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .btn {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .btn-primary {
-    background-color: #2563eb;
-    color: white;
+  background-color: #2563eb;
+  color: white;
 }
 
 .btn-success {
-    background-color: #16a34a;
-    color: white;
+  background-color: #16a34a;
+  color: white;
 }
 
 .btn-danger {
-    background-color: #dc2626;
-    color: white;
+  background-color: #dc2626;
+  color: white;
 }
 
 .btn-secondary {
-    background-color: #6b7280;
-    color: white;
+  background-color: #6b7280;
+  color: white;
 }
 
 .btn-icon-map {
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 1.1rem;
-    cursor: pointer;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
 }
 
 .stats-bar {
-    background: #e5e7eb;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    margin-bottom: 12px;
-    color: #374151;
+  background: #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  color: #374151;
 }
 
 .list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .atm-card {
-    background: white;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-left: 6px solid #ccc;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 6px solid #ccc;
 }
 
 .atm-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .atm-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .color-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .atm-name {
-    font-weight: 600;
-    font-size: 1rem;
-    color: #1f2937;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1f2937;
 }
 
 .tarix-item {
-    background: white;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    font-weight: 600;
-    color: #111827;
-    font-size: 0.95rem;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
 }
 
 .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: white;
-    display: flex;
-    border-top: 1px solid #e5e7eb;
-    z-index: 1000;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: white;
+  display: flex;
+  border-top: 1px solid #e5e7eb;
+  z-index: 1000;
 }
 
 .nav-item {
-    flex: 1;
-    border: none;
-    background: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #6b7280;
-    cursor: pointer;
+  flex: 1;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
 }
 
 .nav-item.active {
-    color: #2563eb;
-    font-weight: bold;
+  color: #2563eb;
+  font-weight: bold;
 }
 
 .nav-item .icon {
-    font-size: 1.2rem;
+  font-size: 1.2rem;
 }
 
 .nav-item .label {
-    font-size: 0.75rem;
-    margin-top: 2px;
+  font-size: 0.75rem;
+  margin-top: 2px;
 }
 
 #btn-gps {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: #2563eb;
-    color: white;
-    border: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 500;
-    cursor: pointer;
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  cursor: pointer;
 }
 
+/* MODAL VA O'LCHAMLAR */
 .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Orqa fonni qorong'ilash */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
 }
 
 .modal.hidden {
-    display: none;
+  display: none;
 }
 
 .modal-content {
-    background: white;
-    width: 90%;
-    max-width: 420px;
-    max-height: 80vh;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
+  background: white;
+
+  width: 80%; /* Ekranning 80% gacha kengayadi */
+  min-width: 140px; /* Juda kichik ekranlarda 140px dan kichik bo'lmaydi */
+  max-width: 500px; /* Juda katta ekranlarda 400px dan oshmaydi */
+
+  height: fit-content; /* Boshida kontentga yopishadi */
+  max-height: 80vh; /* Ekranning 80% idan oshmaydi */
+
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: height 0.2s ease;
+}
+
+/* Birorta guruh ochilganda modalga qo'shiladigan klass */
+.modal-content.expanded {
+  height: 80vh; /* Balandlik avtomatik 80% ga cho'ziladi */
 }
 
 .modal-small {
-    max-width: 320px;
-    text-align: center;
+  max-width: 320px;
+  text-align: center;
 }
 
 .checkbox-list {
-    overflow-y: auto;
-    margin: 15px 0;
-    max-height: 50vh;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  flex: 1; /* Bo'sh joyni egallash uchun */
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    background: #f9fafb;
-    border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 6px;
 }
 
 .checkbox-item input {
-    width: 18px;
-    height: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-/* GURUHLASH STYLES */
+/* GURUHLAR VA AKKORDEON */
 .group-wrapper {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ochilgan guruh barcha bo'sh joyni egallaydi */
+.group-wrapper.open {
+  flex: 1;
+  min-height: 0; /* Flex-box skroll to'g'ri ishlashi uchun */
 }
 
 .group-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    background: #edf2f7;
-    font-size: 0.95rem;
-    color: #2d3748;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #edf2f7;
+  font-size: 0.95rem;
+  color: #2d3748;
+  user-select: none;
 }
 
 .group-title-area {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .group-checkbox {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
 .accordion-icon {
-    font-size: 0.8rem;
-    cursor: pointer;
-    color: #718096;
-    padding: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #718096;
+  padding: 4px;
+  transition: transform 0.2s;
+}
+
+.group-wrapper.open .accordion-icon {
+  transform: rotate(180deg); /* Ochilganda strelka tepaga qaraydi */
 }
 
 .group-items {
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: #ffffff;
-    border-top: 1px solid #e2e8f0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  overflow-y: auto; /* Faqat ochilgan guruh ichida skroll bo'ladi */
+  flex: 1;
 }
 
 .group-items.hidden {
-    display: none;
+  display: none;
 }

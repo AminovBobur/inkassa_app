@@ -236,20 +236,6 @@ function openSelectModal() {
     return;
   }
 
-  // db.baza.forEach(atm => {
-  //     const isChecked = db.marshrutIds.includes(atm.id) ? 'checked' : '';
-  //     const item = document.createElement('label');
-  //     item.className = 'checkbox-item';
-  //     item.innerHTML = `
-  //   <input type="checkbox" value="${atm.id}" ${isChecked}>
-  //   <span class="color-dot" style="background:${atm.color}"></span>
-  //   <span>#${atm.id}. ${atm.name}</span>
-  // `;
-  //     listEl.appendChild(item);
-  // });
-
-  // document.getElementById('select-modal').classList.remove('hidden');
-
   // Bankomatlarni guruhlar bo'yicha ajratamiz
   const groups = {};
   db.baza.forEach((atm) => {
@@ -267,18 +253,20 @@ function openSelectModal() {
       db.marshrutIds.includes(atm.id),
     );
 
+    // openSelectModal funksiyasi ichida:
     const groupWrapper = document.createElement("div");
     groupWrapper.className = "group-wrapper";
 
     // Guruh sarlavhasi va Bosh Checkbox
     const groupHeader = document.createElement("div");
     groupHeader.className = "group-header";
+
     groupHeader.innerHTML = `
             <div class="group-title-area">
-                <input type="checkbox" class="group-checkbox" data-group="${groupName}" ${allChecked ? "checked" : ""} onchange="toggleGroupCheck(this, '${groupName}')">
-                <strong onclick="toggleGroupAccordion('group-items-${index}')" style="cursor:pointer;">📂 ${groupName} (${groupAtms.length} ta)</strong>
+              <input type="checkbox" class="group-checkbox" data-group="${groupName}" ${allChecked ? "checked" : ""} onchange="toggleGroupCheck(this, '${groupName}')">
+              <strong onclick="toggleGroupAccordion('group-items-${index}', this.closest('.group-wrapper'))" style="cursor:pointer;">📂 ${groupName} (${groupAtms.length} ta)</strong>
             </div>
-            <span class="accordion-icon" onclick="toggleGroupAccordion('group-items-${index}')">▼</span>
+            <span class="accordion-icon" onclick="toggleGroupAccordion('group-items-${index}', this.closest('.group-wrapper'))">▼</span>
         `;
 
     // Guruh ichidagi bankomatlar ro'yxati
@@ -306,10 +294,6 @@ function openSelectModal() {
   document.getElementById("select-modal").classList.remove("hidden");
 }
 
-function closeSelectModal() {
-  document.getElementById("select-modal").classList.add("hidden");
-}
-
 // GURUHNIBOSH CHECKBOX'I BOSILGANDA ICHIDAGI BARCHASINI BELGILASH / OCHIRISH
 function toggleGroupCheck(groupMasterCb, groupName) {
   const isChecked = groupMasterCb.checked;
@@ -322,7 +306,7 @@ function toggleGroupCheck(groupMasterCb, groupName) {
   });
 }
 
-// ICHDAGI BITORAMON CHEKBOX O'ZGARSA, GURUHNINKINI HAM TEKSHIRISH
+// ICHKI CHECKBOX O'ZGARSA, GURUHNINKINI TEKSHIRISH
 function updateGroupCheckboxState(groupName) {
   const masterCb = document.querySelector(
     `.group-checkbox[data-group="${groupName}"]`,
@@ -335,10 +319,36 @@ function updateGroupCheckboxState(groupName) {
   masterCb.checked = allChecked;
 }
 
-// AKKORDEONNI OCHISH VA YOPISH
-function toggleGroupAccordion(containerId) {
-  const container = document.getElementById(containerId);
-  container.classList.toggle("hidden");
+// AKKORDEON: YAGONA OCHILISH VA DYNAMIK BALANDLIK MANTIQI
+function toggleGroupAccordion(containerId, targetWrapper) {
+  const targetContainer = document.getElementById(containerId);
+  const modalContent = document.querySelector("#select-modal .modal-content");
+  const isCurrentlyHidden = targetContainer.classList.contains("hidden");
+
+  // 1. Barcha guruhlarni va ularning ochiq holatlarini yopamiz
+  document
+    .querySelectorAll(".group-items")
+    .forEach((el) => el.classList.add("hidden"));
+  document
+    .querySelectorAll(".group-wrapper")
+    .forEach((el) => el.classList.remove("open"));
+
+  // 2. Agar bosilgan guruh yopiq bo'lgan bo'lsa, uni ochamiz
+  if (isCurrentlyHidden) {
+    targetContainer.classList.remove("hidden");
+    targetWrapper.classList.add("open");
+    modalContent.classList.add("expanded"); // Modal balandligini 80vh qiladi
+  } else {
+    // Agar barcha guruhlar yopilsa, modalni compact (ixcham) holatga qaytaramiz
+    modalContent.classList.remove("expanded");
+  }
+}
+
+// MODAL YOPILGANDA BALANDLIKNI DASTLABKI HOLATGA QAYTARISH
+function closeSelectModal() {
+  const modalContent = document.querySelector("#select-modal .modal-content");
+  if (modalContent) modalContent.classList.remove("expanded");
+  document.getElementById("select-modal").classList.add("hidden");
 }
 
 function saveSelectedMarshrut() {
