@@ -482,61 +482,92 @@ function openYandexNavi(lat, lng) {
   );
 }
 
-// Foydalanuvchi joylashuvini xotirada saqlash va icon obyektini ushlab turish uchun o'zgaruvchilar
-let userLocation = null;
+// Foydalanuvchi markerini ushlab turuvchi o'zgaruvchi
 let userPlacemark = null;
 
 function locateUser() {
-  // 1. Agar joylashuv avval aniqlangan bo'lsa, qayta ruxsat so'ramaymiz
-  if (userLocation) {
-    myMap.setCenter(userLocation, 16, { checkZoomRange: true, duration: 300 });
-    showUserMarker(userLocation);
+  const btnGps = document.getElementById("btn-gps");
+
+  // 1. Tugmani faolsizlantirish va xiralashtirish
+  if (btnGps) {
+    btnGps.disabled = true;
+  }
+
+  // 2. Geolokatsiya mavjudligini tekshirish
+  if (!navigator.geolocation) {
+    alert("Brauzeringizda Geolocation qo'llab-quvvatlanmaydi.");
+    if (btnGps) btnGps.disabled = false;
     return;
   }
 
-  // 2. Birinchi marta bosilganda brauzerdan ruxsat so'raymiz
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        userLocation = [lat, lng]; // Xotiraga saqlaymiz
+  // 3. Geolokatsiyani olish (maximumAge: 0 - keshdagi eski joylashuvni ishlatmaydi)
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const currentLocation = [lat, lng];
 
-        // Xaritaning markazini suramiz
-        myMap.setCenter(userLocation, 16, {
+      // Xarita markazini va fokusini yangi koordinataga burish
+      if (myMap) {
+        myMap.setCenter(currentLocation, 16, {
           checkZoomRange: true,
           duration: 300,
         });
+      }
 
-        // Icon (Marker) qo'shamiz
-        showUserMarker(userLocation);
-      },
-      (error) => {
-        alert(
-          "GPS geolokatsiyani aniqlab bo'lmadi. Telefon geolokatsiyasi yoqilganini tekshiring.",
-        );
-        console.error(error);
-      },
-      { enableHighAccuracy: true },
-    );
-  } else {
-    alert("Brauzeringizda Geolocation qo'llab-quvvatlanmaydi.");
-  }
+      // Xaritadagi ko'k markerni yangilash
+      showUserMarker(currentLocation);
+
+      // Tugmani qayta faollashtirish
+      if (btnGps) btnGps.disabled = false;
+    },
+    (error) => {
+      // Xatolik turiga qarab xabar chiqarish
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          alert(
+            "Joylashuvni aniqlashga ruxsat berilmadi. Brauzer yoki qurilma sozlamalaridan geolokatsiyani yoqing.",
+          );
+          break;
+        case error.POSITION_UNAVAILABLE:
+          alert(
+            "GPS signali topilmadi. Telefonda geolokatsiya yoqilganini tekshiring.",
+          );
+          break;
+        case error.TIMEOUT:
+          alert("Joylashuvni aniqlash vaqti tugadi. Qayta urinib ko'ring.");
+          break;
+        default:
+          alert("Geolokatsiyani aniqlashda xatolik yuz berdi.");
+          break;
+      }
+
+      // Xatolik bo'lganida ham tugmani qayta faollashtirish
+      if (btnGps) btnGps.disabled = false;
+    },
+    {
+      enableHighAccuracy: true, // GPS aniqligini oshirish
+      timeout: 10000, // 10 soniya kutish limiti
+      maximumAge: 0, // Keshdagi eski koordinatani ishlatmaslik
+    },
+  );
 }
 
 // Xaritaga foydalanuvchi iconini chiqaruvchi funksiya
 function showUserMarker(coords) {
-  // Agar icon avval yaratilgan bo'lsa, shunchaki o'rnini yangilaymiz
+  if (!myMap) return;
+
   if (userPlacemark) {
+    // Marker avval yaratilgan bo'lsa, shunchaki yangi koordinataga ko'chiramiz
     userPlacemark.geometry.setCoordinates(coords);
   } else {
-    // Yangi ajralib turuvchi ko'k icon yaratamiz
+    // Yangi ajralib turuvchi ko'k marker yaratamiz
     userPlacemark = new ymaps.Placemark(
       coords,
       { hintContent: "Sizning joylashuvinigiz" },
       {
-        preset: "islands#circleDotIcon", // Nuqtali doira shaklidagi standart icon
-        iconColor: "#1E88E5", // Yorqin ko'k rang
+        preset: "islands#circleDotIcon",
+        iconColor: "#1E88E5",
       },
     );
     myMap.geoObjects.add(userPlacemark);

@@ -215,6 +215,12 @@ html {
   cursor: pointer;
 }
 
+#btn-gps:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* MODAL VA O'LCHAMLAR */
 .modal {
   position: fixed;
