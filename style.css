@@ -149,6 +149,8 @@ html {
   color: #1f2937;
 }
 
+/* ************************************ */
+
 .tarix-item {
   background: white;
   padding: 12px;
@@ -157,6 +159,80 @@ html {
   font-weight: 600;
   color: #111827;
   font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 6px solid #ccc;
+  gap: 8px;
+}
+
+.tarix-info {
+  flex: 1;
+  word-break: break-word;
+}
+
+.tarix-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-remove-tarix {
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.btn-remove-tarix:hover {
+  background: #fee2e2;
+}
+
+.tarix-item-success {
+  border-left-color: #16a34a;
+}
+
+.tarix-item-broken {
+  border-left-color: #dc2626;
+}
+
+.tarix-warning-icon {
+  font-size: 1.1rem;
+}
+
+/* XARITA BALLOON TUGMALARI */
+.map-balloon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.map-btn {
+  padding: 8px 10px;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.map-btn-success {
+  background-color: #16a34a;
+}
+
+.map-btn-danger {
+  background-color: #dc2626;
+}
+
+.map-btn-primary {
+  background-color: #2563eb;
+  grid-column: span 2;
 }
 
 .bottom-nav {
@@ -228,7 +304,7 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Orqa fonni qorong'ilash */
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -241,14 +317,11 @@ html {
 
 .modal-content {
   background: white;
-
-  width: 80%; /* Ekranning 80% gacha kengayadi */
-  min-width: 140px; /* Juda kichik ekranlarda 140px dan kichik bo'lmaydi */
-  max-width: 500px; /* Juda katta ekranlarda 400px dan oshmaydi */
-
-  height: fit-content; /* Boshida kontentga yopishadi */
-  max-height: 80vh; /* Ekranning 80% idan oshmaydi */
-
+  width: 80%;
+  min-width: 140px;
+  max-width: 500px;
+  height: fit-content;
+  max-height: 80vh;
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -257,9 +330,8 @@ html {
   transition: height 0.2s ease;
 }
 
-/* Birorta guruh ochilganda modalga qo'shiladigan klass */
 .modal-content.expanded {
-  height: 80vh; /* Balandlik avtomatik 80% ga cho'ziladi */
+  height: 80vh;
 }
 
 .modal-small {
@@ -272,7 +344,7 @@ html {
   flex-direction: column;
   gap: 8px;
   margin: 12px 0;
-  flex: 1; /* Bo'sh joyni egallash uchun */
+  flex: 1;
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -308,10 +380,9 @@ html {
   overflow: hidden;
 }
 
-/* Ochilgan guruh barcha bo'sh joyni egallaydi */
 .group-wrapper.open {
   flex: 1;
-  min-height: 0; /* Flex-box skroll to'g'ri ishlashi uchun */
+  min-height: 0;
 }
 
 .group-header {
@@ -346,7 +417,7 @@ html {
 }
 
 .group-wrapper.open .accordion-icon {
-  transform: rotate(180deg); /* Ochilganda strelka tepaga qaraydi */
+  transform: rotate(180deg);
 }
 
 .group-items {
@@ -356,7 +427,7 @@ html {
   gap: 6px;
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
-  overflow-y: auto; /* Faqat ochilgan guruh ichida skroll bo'ladi */
+  overflow-y: auto;
   flex: 1;
 }
 

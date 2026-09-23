@@ -188,7 +188,8 @@ function renderMarshrutView() {
       </div>
       <div class="atm-actions">
         <button class="btn-icon-map" title="Xaritada ko'rish" onclick="showOnMap(${atm.id})">🗺️</button>
-        <button class="btn btn-success" onclick="confirmInkassa(${atm.id})">Inkassa</button>
+        <button class="btn-icon-map" title="Nosoz deb belgilash" onclick="confirmBroken(${atm.id})">🚫</button>
+        <button class="btn-icon-map" title="Inkassa qilish" onclick="confirmInkassa(${atm.id})">✅</button>
       </div>
     `;
     listEl.appendChild(card);
@@ -221,7 +222,6 @@ function openSelectModal() {
       db.marshrutIds.includes(atm.id),
     );
 
-    // openSelectModal funksiyasi ichida:
     const groupWrapper = document.createElement("div");
     groupWrapper.className = "group-wrapper";
 
@@ -262,7 +262,6 @@ function openSelectModal() {
   document.getElementById("select-modal").classList.remove("hidden");
 }
 
-// GURUHNIBOSH CHECKBOX'I BOSILGANDA ICHIDAGI BARCHASINI BELGILASH / OCHIRISH
 function toggleGroupCheck(groupMasterCb, groupName) {
   const isChecked = groupMasterCb.checked;
   const atmCheckboxes = document.querySelectorAll(
@@ -274,7 +273,6 @@ function toggleGroupCheck(groupMasterCb, groupName) {
   });
 }
 
-// ICHKI CHECKBOX O'ZGARSA, GURUHNINKINI TEKSHIRISH
 function updateGroupCheckboxState(groupName) {
   const masterCb = document.querySelector(
     `.group-checkbox[data-group="${groupName}"]`,
@@ -287,13 +285,11 @@ function updateGroupCheckboxState(groupName) {
   masterCb.checked = allChecked;
 }
 
-// AKKORDEON: YAGONA OCHILISH VA DYNAMIK BALANDLIK MANTIQI
 function toggleGroupAccordion(containerId, targetWrapper) {
   const targetContainer = document.getElementById(containerId);
   const modalContent = document.querySelector("#select-modal .modal-content");
   const isCurrentlyHidden = targetContainer.classList.contains("hidden");
 
-  // 1. Barcha guruhlarni va ularning ochiq holatlarini yopamiz
   document
     .querySelectorAll(".group-items")
     .forEach((el) => el.classList.add("hidden"));
@@ -301,18 +297,15 @@ function toggleGroupAccordion(containerId, targetWrapper) {
     .querySelectorAll(".group-wrapper")
     .forEach((el) => el.classList.remove("open"));
 
-  // 2. Agar bosilgan guruh yopiq bo'lgan bo'lsa, uni ochamiz
   if (isCurrentlyHidden) {
     targetContainer.classList.remove("hidden");
     targetWrapper.classList.add("open");
-    modalContent.classList.add("expanded"); // Modal balandligini 80vh qiladi
+    modalContent.classList.add("expanded");
   } else {
-    // Agar barcha guruhlar yopilsa, modalni compact (ixcham) holatga qaytaramiz
     modalContent.classList.remove("expanded");
   }
 }
 
-// MODAL YOPILGANDA BALANDLIKNI DASTLABKI HOLATGA QAYTARISH
 function closeSelectModal() {
   const modalContent = document.querySelector("#select-modal .modal-content");
   if (modalContent) modalContent.classList.remove("expanded");
@@ -320,8 +313,6 @@ function closeSelectModal() {
 }
 
 function saveSelectedMarshrut() {
-  // const checkboxes = document.querySelectorAll('#select-checkbox-list input[type="checkbox"]');
-
   const checkboxes = document.querySelectorAll(".atm-checkbox");
   const selected = [];
 
@@ -348,18 +339,53 @@ function clearMarshrutData() {
 function renderTarixView() {
   const listEl = document.getElementById("tarix-list");
   const countEl = document.getElementById("tarix-total-count");
+  const successEl = document.getElementById("tarix-success-count");
+  const brokenEl = document.getElementById("tarix-broken-count");
 
-  countEl.innerText = db.tarix.length;
+  const successCount = db.tarix.filter(
+    (t) => t.status === "success" || !t.status,
+  ).length;
+  const brokenCount = db.tarix.filter((t) => t.status === "broken").length;
+
+  if (countEl) countEl.innerText = db.tarix.length;
+  if (successEl) successEl.innerText = successCount;
+  if (brokenEl) brokenEl.innerText = brokenCount;
+
   listEl.innerHTML = "";
 
   const reversedTarix = [...db.tarix].reverse();
 
   reversedTarix.forEach((item) => {
     const el = document.createElement("div");
-    el.className = "tarix-item";
-    el.innerText = `${item.time} — #${item.id}. ${item.name}`;
+    const isBroken = item.status === "broken";
+    el.className = `tarix-item ${isBroken ? "tarix-item-broken" : "tarix-item-success"}`;
+    el.innerHTML = `
+      <span class="tarix-info">${item.time} — #${item.id}. ${item.name}</span>
+      <div class="tarix-actions">
+        ${isBroken ? `<span class="tarix-warning-icon">⚠️</span>` : ""}
+        <button class="btn-remove-tarix" title="Tarixdan o'chirish va marshrutga qaytarish" onclick="removeFromTarix(${item.id})">❌</button>
+      </div>
+    `;
     listEl.appendChild(el);
   });
+}
+
+function removeFromTarix(id) {
+  showConfirm(
+    "Haqiqatan ham ushbu bankomatni tarixdan o'chirmoqchimisiz?",
+    function () {
+      // 1. Tarixdan olib tashlaymiz
+      db.tarix = db.tarix.filter((t) => t.id !== id);
+
+      // 2. Marshrut ro'yxatida bo'lmasa, qayta qo'shamiz
+      if (!db.marshrutIds.includes(id)) {
+        db.marshrutIds.push(id);
+      }
+
+      // 3. Saqlaymiz va ekranni yangilaymiz
+      saveData();
+    },
+  );
 }
 
 function clearTarixData() {
@@ -384,6 +410,29 @@ function confirmInkassa(id) {
       id: atm.id,
       name: atm.name,
       time: timeStr,
+      status: "success",
+    });
+
+    saveData();
+  });
+}
+
+function confirmBroken(id) {
+  showConfirm("Ushbu bankomatni nosoz deb belgilamoqchimisiz?", function () {
+    const atm = db.baza.find((a) => a.id === id);
+    if (!atm) return;
+
+    const now = new Date();
+    const timeStr =
+      now.getHours().toString().padStart(2, "0") +
+      ":" +
+      now.getMinutes().toString().padStart(2, "0");
+
+    db.tarix.push({
+      id: atm.id,
+      name: atm.name,
+      time: timeStr,
+      status: "broken",
     });
 
     saveData();
@@ -441,9 +490,10 @@ function updateMapMarkers() {
       {
         balloonContentHeader: `<b>#${atm.id}. ${atm.name}</b>`,
         balloonContentBody: `
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button style="padding:6px 10px; background:#16a34a; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="confirmInkassa(${atm.id})">Inkassa qilish</button>
-          <button style="padding:6px 10px; background:#2563eb; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="openYandexNavi(${atm.lat}, ${atm.lng})">Marshrut</button>
+        <div class="map-balloon-grid">
+          <button class="map-btn map-btn-success" onclick="confirmInkassa(${atm.id})">Inkassa</button>
+          <button class="map-btn map-btn-danger" onclick="confirmBroken(${atm.id})">Nosoz</button>
+          <button class="map-btn map-btn-primary" onclick="openYandexNavi(${atm.lat}, ${atm.lng})">Marshrut</button>
         </div>
       `,
       },
@@ -482,32 +532,27 @@ function openYandexNavi(lat, lng) {
   );
 }
 
-// Foydalanuvchi markerini ushlab turuvchi o'zgaruvchi
 let userPlacemark = null;
 
 function locateUser() {
   const btnGps = document.getElementById("btn-gps");
 
-  // 1. Tugmani faolsizlantirish va xiralashtirish
   if (btnGps) {
     btnGps.disabled = true;
   }
 
-  // 2. Geolokatsiya mavjudligini tekshirish
   if (!navigator.geolocation) {
     alert("Brauzeringizda Geolocation qo'llab-quvvatlanmaydi.");
     if (btnGps) btnGps.disabled = false;
     return;
   }
 
-  // 3. Geolokatsiyani olish (maximumAge: 0 - keshdagi eski joylashuvni ishlatmaydi)
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       const currentLocation = [lat, lng];
 
-      // Xarita markazini va fokusini yangi koordinataga burish
       if (myMap) {
         myMap.setCenter(currentLocation, 16, {
           checkZoomRange: true,
@@ -515,14 +560,11 @@ function locateUser() {
         });
       }
 
-      // Xaritadagi ko'k markerni yangilash
       showUserMarker(currentLocation);
 
-      // Tugmani qayta faollashtirish
       if (btnGps) btnGps.disabled = false;
     },
     (error) => {
-      // Xatolik turiga qarab xabar chiqarish
       switch (error.code) {
         case error.PERMISSION_DENIED:
           alert(
@@ -542,26 +584,22 @@ function locateUser() {
           break;
       }
 
-      // Xatolik bo'lganida ham tugmani qayta faollashtirish
       if (btnGps) btnGps.disabled = false;
     },
     {
-      enableHighAccuracy: true, // GPS aniqligini oshirish
-      timeout: 10000, // 10 soniya kutish limiti
-      maximumAge: 0, // Keshdagi eski koordinatani ishlatmaslik
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
     },
   );
 }
 
-// Xaritaga foydalanuvchi iconini chiqaruvchi funksiya
 function showUserMarker(coords) {
   if (!myMap) return;
 
   if (userPlacemark) {
-    // Marker avval yaratilgan bo'lsa, shunchaki yangi koordinataga ko'chiramiz
     userPlacemark.geometry.setCoordinates(coords);
   } else {
-    // Yangi ajralib turuvchi ko'k marker yaratamiz
     userPlacemark = new ymaps.Placemark(
       coords,
       { hintContent: "Sizning joylashuvinigiz" },
