@@ -13,7 +13,7 @@
     <!-- Excel bilan ishlash uchun SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <!-- Yandex Maps'dan oldin ushbu Telegram skriptini qo'shing -->
+    <!-- Telegram Web App skripti -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <!-- Yandex Maps API -->
@@ -97,6 +97,42 @@
           </svg>
         </button>
       </section>
+
+      <!-- 5-OYNA: TOPSHIRIKLAR -->
+      <section id="view-topshiriq" class="view">
+        <header class="page-header">
+          <h2>📝 Topshiriqlar</h2>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="openTopshiriqAtmModal()">
+              Bankomatlar
+            </button>
+            <button class="btn btn-primary" onclick="openTopshiriqTaskModal()">
+              Topshiriqlar
+            </button>
+          </div>
+        </header>
+
+        <!-- STATISTIKA PANELI -->
+        <div class="stats-bar">
+          <span>
+            Jami: <strong id="t-total">0</strong> | Bajarildi:
+            <strong id="t-done">0</strong> | Bajarilmadi:
+            <strong id="t-left">0</strong>
+          </span>
+        </div>
+
+        <div class="task-tables-container">
+          <div class="table-section">
+            <h3 class="table-title uncompleted-title">Bajarilmaganlar</h3>
+            <div id="uncompleted-table-wrapper" class="table-wrapper"></div>
+          </div>
+
+          <div class="table-section">
+            <h3 class="table-title completed-title">Bajarilganlar</h3>
+            <div id="completed-table-wrapper" class="table-wrapper"></div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- BOTTOM NAVIGATION -->
@@ -117,6 +153,10 @@
         <span class="icon">🗺️</span>
         <span class="label">Xarita</span>
       </button>
+      <button class="nav-item" data-target="view-topshiriq">
+        <span class="icon">📝</span>
+        <span class="label">Topshiriqlar</span>
+      </button>
     </nav>
 
     <!-- MODAL: MARSHRUTGA BELGILASH -->
@@ -129,6 +169,54 @@
             Saqlash
           </button>
           <button class="btn btn-secondary" onclick="closeSelectModal()">
+            Bekor qilish
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: TOPSHIRIKLAR UCHUN BANKOMATLARDAN TANLASH -->
+    <div id="topshiriq-atm-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Topshiriqlar uchun bankomatlarni tanlang</h3>
+        <div id="topshiriq-atm-checkbox-list" class="checkbox-list"></div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="saveTopshiriqAtms()">
+            Saqlash
+          </button>
+          <button class="btn btn-secondary" onclick="closeTopshiriqAtmModal()">
+            Bekor qilish
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: TOPSHIRIKLAR RO'YXATINI TANLASH -->
+    <div id="topshiriq-task-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Topshiriqlar ro'yxatini tanlang</h3>
+        <div id="topshiriq-task-checkbox-list" class="checkbox-list"></div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="saveTopshiriqTasks()">
+            Saqlash
+          </button>
+          <button class="btn btn-secondary" onclick="closeTopshiriqTaskModal()">
+            Bekor qilish
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: BANKOMAT TOPSHIRIKLARINI BAJARISH (RADIO BUTTONLAR) -->
+    <div id="atm-status-edit-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="modal-atm-title">Bankomat nomi</h3>
+        <div id="atm-tasks-status-list" class="tasks-radio-list"></div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="saveAtmTaskStatus()">
+            Saqlash
+          </button>
+          <button class="btn btn-secondary" onclick="closeAtmStatusEditModal()">
             Bekor qilish
           </button>
         </div>

@@ -6,15 +6,32 @@ if (tg) {
   tg.expand();
 }
 
+// Boshlang'ich topshiriqlar ro'yxati (String list)
+const DEFAULT_TASKS_LIST = [
+  "Arenda",
+  "Reklama",
+  "Chek qog'oz",
+  "Ekran",
+  "Sistemniy Blok",
+  "Paket",
+  "Boshqa",
+];
+
 let db = {
   baza: JSON.parse(localStorage.getItem("inkassa_baza")) || [],
   marshrutIds: JSON.parse(localStorage.getItem("inkassa_marshrut")) || [],
   tarix: JSON.parse(localStorage.getItem("inkassa_tarix")) || [],
+  topshiriqAtms: JSON.parse(localStorage.getItem("topshiriq_atms")) || [],
+  selectedTasks:
+    JSON.parse(localStorage.getItem("topshiriq_selected_tasks")) ||
+    DEFAULT_TASKS_LIST,
+  topshiriqData: JSON.parse(localStorage.getItem("topshiriq_data")) || {},
 };
 
 let myMap = null;
 let locationControl = null;
 let pendingConfirmAction = null;
+let currentEditingAtmId = null;
 
 window.onload = function () {
   setupNavigation();
@@ -27,6 +44,12 @@ function saveData() {
   localStorage.setItem("inkassa_baza", JSON.stringify(db.baza));
   localStorage.setItem("inkassa_marshrut", JSON.stringify(db.marshrutIds));
   localStorage.setItem("inkassa_tarix", JSON.stringify(db.tarix));
+  localStorage.setItem("topshiriq_atms", JSON.stringify(db.topshiriqAtms));
+  localStorage.setItem(
+    "topshiriq_selected_tasks",
+    JSON.stringify(db.selectedTasks),
+  );
+  localStorage.setItem("topshiriq_data", JSON.stringify(db.topshiriqData));
   renderAllViews();
 }
 
@@ -65,6 +88,7 @@ function renderAllViews() {
   renderBazaView();
   renderMarshrutView();
   renderTarixView();
+  renderTopshiriqView();
   if (myMap) updateMapMarkers();
 }
 
@@ -122,7 +146,7 @@ function setupExcelImport() {
           db.baza = jsonData.map((item) => ({
             id: item.id,
             name: item.name,
-            group: item.group || "Umumiy", // Agar guruh ko'rsatilmagan bo'lsa 'Umumiy' bo'ladi
+            group: item.group || "Umumiy",
             color: item.color || "#FF0000",
             lat: parseFloat(item.lat),
             lng: parseFloat(item.lng),
@@ -156,6 +180,8 @@ function clearFullSystem() {
       db.baza = [];
       db.marshrutIds = [];
       db.tarix = [];
+      db.topshiriqAtms = [];
+      db.topshiriqData = {};
       saveData();
     },
   );
@@ -205,7 +231,6 @@ function openSelectModal() {
     return;
   }
 
-  // Bankomatlarni guruhlar bo'yicha ajratamiz
   const groups = {};
   db.baza.forEach((atm) => {
     const groupName = atm.group || "Umumiy";
@@ -213,11 +238,8 @@ function openSelectModal() {
     groups[groupName].push(atm);
   });
 
-  // Har bir guruh uchun blok yaratamiz
   Object.keys(groups).forEach((groupName, index) => {
     const groupAtms = groups[groupName];
-
-    // Guruhdagi barcha bankomatlar belgilanganmi?
     const allChecked = groupAtms.every((atm) =>
       db.marshrutIds.includes(atm.id),
     );
@@ -225,32 +247,29 @@ function openSelectModal() {
     const groupWrapper = document.createElement("div");
     groupWrapper.className = "group-wrapper";
 
-    // Guruh sarlavhasi va Bosh Checkbox
     const groupHeader = document.createElement("div");
     groupHeader.className = "group-header";
-
     groupHeader.innerHTML = `
-            <div class="group-title-area">
-              <input type="checkbox" class="group-checkbox" data-group="${groupName}" ${allChecked ? "checked" : ""} onchange="toggleGroupCheck(this, '${groupName}')">
-              <strong onclick="toggleGroupAccordion('group-items-${index}', this.closest('.group-wrapper'))" style="cursor:pointer;">📂 ${groupName} (${groupAtms.length} ta)</strong>
-            </div>
-            <span class="accordion-icon" onclick="toggleGroupAccordion('group-items-${index}', this.closest('.group-wrapper'))">▼</span>
-        `;
+      <div class="group-title-area">
+        <input type="checkbox" class="group-checkbox" data-group="${groupName}" ${allChecked ? "checked" : ""} onchange="toggleGroupCheck(this, '${groupName}')">
+        <strong onclick="toggleGroupAccordion('group-items-${index}', this.closest('.group-wrapper'))" style="cursor:pointer;">📂 ${groupName} (${groupAtms.length} ta)</strong>
+      </div>
+      <span class="accordion-icon" onclick="toggleGroupAccordion('group-items-${index}', this.closest('.group-wrapper'))">▼</span>
+    `;
 
-    // Guruh ichidagi bankomatlar ro'yxati
     const itemsContainer = document.createElement("div");
     itemsContainer.id = `group-items-${index}`;
-    itemsContainer.className = "group-items hidden"; // Boshida yig'ilgan turadi
+    itemsContainer.className = "group-items hidden";
 
     groupAtms.forEach((atm) => {
       const isChecked = db.marshrutIds.includes(atm.id) ? "checked" : "";
       const item = document.createElement("label");
       item.className = "checkbox-item";
       item.innerHTML = `
-                <input type="checkbox" class="atm-checkbox" data-group="${groupName}" value="${atm.id}" ${isChecked} onchange="updateGroupCheckboxState('${groupName}')">
-                <span class="color-dot" style="background:${atm.color}"></span>
-                <span>#${atm.id}. ${atm.name}</span>
-            `;
+        <input type="checkbox" class="atm-checkbox" data-group="${groupName}" value="${atm.id}" ${isChecked} onchange="updateGroupCheckboxState('${groupName}')">
+        <span class="color-dot" style="background:${atm.color}"></span>
+        <span>#${atm.id}. ${atm.name}</span>
+      `;
       itemsContainer.appendChild(item);
     });
 
@@ -267,7 +286,6 @@ function toggleGroupCheck(groupMasterCb, groupName) {
   const atmCheckboxes = document.querySelectorAll(
     `.atm-checkbox[data-group="${groupName}"]`,
   );
-
   atmCheckboxes.forEach((cb) => {
     cb.checked = isChecked;
   });
@@ -280,9 +298,8 @@ function updateGroupCheckboxState(groupName) {
   const atmCheckboxes = document.querySelectorAll(
     `.atm-checkbox[data-group="${groupName}"]`,
   );
-
   const allChecked = Array.from(atmCheckboxes).every((cb) => cb.checked);
-  masterCb.checked = allChecked;
+  if (masterCb) masterCb.checked = allChecked;
 }
 
 function toggleGroupAccordion(containerId, targetWrapper) {
@@ -300,9 +317,9 @@ function toggleGroupAccordion(containerId, targetWrapper) {
   if (isCurrentlyHidden) {
     targetContainer.classList.remove("hidden");
     targetWrapper.classList.add("open");
-    modalContent.classList.add("expanded");
+    if (modalContent) modalContent.classList.add("expanded");
   } else {
-    modalContent.classList.remove("expanded");
+    if (modalContent) modalContent.classList.remove("expanded");
   }
 }
 
@@ -315,11 +332,9 @@ function closeSelectModal() {
 function saveSelectedMarshrut() {
   const checkboxes = document.querySelectorAll(".atm-checkbox");
   const selected = [];
-
   checkboxes.forEach((cb) => {
     if (cb.checked) selected.push(parseInt(cb.value));
   });
-
   db.marshrutIds = selected;
   saveData();
   closeSelectModal();
@@ -352,7 +367,6 @@ function renderTarixView() {
   if (brokenEl) brokenEl.innerText = brokenCount;
 
   listEl.innerHTML = "";
-
   const reversedTarix = [...db.tarix].reverse();
 
   reversedTarix.forEach((item) => {
@@ -363,7 +377,7 @@ function renderTarixView() {
       <span class="tarix-info">${item.time} — #${item.id}. ${item.name}</span>
       <div class="tarix-actions">
         ${isBroken ? `<span class="tarix-warning-icon">⚠️</span>` : ""}
-        <button class="btn-remove-tarix" title="Tarixdan o'chirish va marshrutga qaytarish" onclick="removeFromTarix(${item.id})">❌</button>
+        <button class="btn-remove-tarix" title="Tarixdan o'chirish" onclick="removeFromTarix(${item.id})">❌</button>
       </div>
     `;
     listEl.appendChild(el);
@@ -372,17 +386,12 @@ function renderTarixView() {
 
 function removeFromTarix(id) {
   showConfirm(
-    "Haqiqatan ham ushbu bankomatni tarixdan o'chirmoqchimisiz?",
+    "Haqiqatan ham ushbu bankomatni tarixdan o'chirib, marshrutga qaytarmoqchimisiz?",
     function () {
-      // 1. Tarixdan olib tashlaymiz
       db.tarix = db.tarix.filter((t) => t.id !== id);
-
-      // 2. Marshrut ro'yxatida bo'lmasa, qayta qo'shamiz
       if (!db.marshrutIds.includes(id)) {
         db.marshrutIds.push(id);
       }
-
-      // 3. Saqlaymiz va ekranni yangilaymiz
       saveData();
     },
   );
@@ -457,7 +466,7 @@ document
     closeConfirmModal();
   });
 
-// 4-OYNA: YANDEX MAPS VA GEOLOKATSIYA
+// 4-OYNA: YANDEX MAPS
 function initYandexMap() {
   ymaps.ready(() => {
     myMap = new ymaps.Map("yandex-map", {
@@ -502,7 +511,6 @@ function updateMapMarkers() {
         iconColor: atm.color || "#FF0000",
       },
     );
-
     myMap.geoObjects.add(placemark);
   });
 }
@@ -512,10 +520,8 @@ function showOnMap(id) {
   if (!atm) return;
 
   switchTab("view-xarita");
-
   if (myMap) {
     myMap.setCenter([atm.lat, atm.lng], 16, { duration: 400 });
-
     myMap.geoObjects.each((geoObj) => {
       const coords = geoObj.geometry.getCoordinates();
       if (coords && coords[0] === atm.lat && coords[1] === atm.lng) {
@@ -536,10 +542,7 @@ let userPlacemark = null;
 
 function locateUser() {
   const btnGps = document.getElementById("btn-gps");
-
-  if (btnGps) {
-    btnGps.disabled = true;
-  }
+  if (btnGps) btnGps.disabled = true;
 
   if (!navigator.geolocation) {
     alert("Brauzeringizda Geolocation qo'llab-quvvatlanmaydi.");
@@ -559,55 +562,349 @@ function locateUser() {
           duration: 300,
         });
       }
-
       showUserMarker(currentLocation);
-
       if (btnGps) btnGps.disabled = false;
     },
     (error) => {
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          alert(
-            "Joylashuvni aniqlashga ruxsat berilmadi. Brauzer yoki qurilma sozlamalaridan geolokatsiyani yoqing.",
-          );
-          break;
-        case error.POSITION_UNAVAILABLE:
-          alert(
-            "GPS signali topilmadi. Telefonda geolokatsiya yoqilganini tekshiring.",
-          );
-          break;
-        case error.TIMEOUT:
-          alert("Joylashuvni aniqlash vaqti tugadi. Qayta urinib ko'ring.");
-          break;
-        default:
-          alert("Geolokatsiyani aniqlashda xatolik yuz berdi.");
-          break;
-      }
-
+      alert("Geolokatsiyani aniqlashda xatolik yuz berdi.");
       if (btnGps) btnGps.disabled = false;
     },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
-    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
   );
 }
 
 function showUserMarker(coords) {
   if (!myMap) return;
-
   if (userPlacemark) {
     userPlacemark.geometry.setCoordinates(coords);
   } else {
     userPlacemark = new ymaps.Placemark(
       coords,
       { hintContent: "Sizning joylashuvinigiz" },
-      {
-        preset: "islands#circleDotIcon",
-        iconColor: "#1E88E5",
-      },
+      { preset: "islands#circleDotIcon", iconColor: "#1E88E5" },
     );
     myMap.geoObjects.add(userPlacemark);
   }
+}
+
+// ==========================================
+// 5-OYNA: TOPSHIRIKLAR MANIQLARI
+// ==========================================
+
+function renderTopshiriqView() {
+  const uncompletedWrapper = document.getElementById(
+    "uncompleted-table-wrapper",
+  );
+  const completedWrapper = document.getElementById("completed-table-wrapper");
+
+  uncompletedWrapper.innerHTML = "";
+  completedWrapper.innerHTML = "";
+
+  // Baza ichidan tanlangan bankomatlarni ajratamiz va ID bo'yicha saralaymiz
+  const selectedAtms = db.baza
+    .filter((a) => db.topshiriqAtms.includes(a.id))
+    .sort((a, b) => a.id - b.id);
+
+  const uncompletedAtms = [];
+  const completedAtms = [];
+
+  selectedAtms.forEach((atm) => {
+    const atmTasks = db.topshiriqData[atm.id] || {};
+    // Kamida 1 ta task '✓' yoki '✕' bo'lsa -> Completed
+    const isDone = db.selectedTasks.some(
+      (task) => atmTasks[task] === "✓" || atmTasks[task] === "✕",
+    );
+    if (isDone) {
+      completedAtms.push(atm);
+    } else {
+      uncompletedAtms.push(atm);
+    }
+  });
+
+  // Statistikalarni yangilash
+  const totalEl = document.getElementById("t-total");
+  const doneEl = document.getElementById("t-done");
+  const leftEl = document.getElementById("t-left");
+
+  if (totalEl) totalEl.innerText = selectedAtms.length;
+  if (doneEl) doneEl.innerText = completedAtms.length;
+  if (leftEl) leftEl.innerText = uncompletedAtms.length;
+
+  uncompletedWrapper.appendChild(buildTaskTable(uncompletedAtms));
+  completedWrapper.appendChild(buildTaskTable(completedAtms));
+}
+
+function buildTaskTable(atms) {
+  const table = document.createElement("table");
+  table.className = "task-table";
+
+  // Header
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+
+  const nameTh = document.createElement("th");
+  nameTh.innerText = "Nomi";
+  headerRow.appendChild(nameTh);
+
+  db.selectedTasks.forEach((taskName) => {
+    const th = document.createElement("th");
+    th.innerText = taskName;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  // Body
+  const tbody = document.createElement("tbody");
+  if (atms.length === 0) {
+    const emptyRow = document.createElement("tr");
+    const emptyTd = document.createElement("td");
+    emptyTd.colSpan = db.selectedTasks.length + 1;
+    emptyTd.innerText = "Ma'lumot mavjud emas";
+    emptyTd.className = "empty-td";
+    emptyRow.appendChild(emptyTd);
+    tbody.appendChild(emptyRow);
+  } else {
+    atms.forEach((atm) => {
+      const row = document.createElement("tr");
+
+      // Status xolatini aniqlash:
+      const atmTasks = db.topshiriqData[atm.id] || {};
+      const taskValues = db.selectedTasks.map((t) => atmTasks[t] || "▢");
+
+      let statusClass = "atm-btn-pending"; // Bajarilmoqda/Neytral
+      if (taskValues.some((val) => val === "✕")) {
+        statusClass = "atm-btn-failed"; // Qoniqarsiz (kamida 1 ta ✕ bo'lsa)
+      } else if (
+        db.selectedTasks.length > 0 &&
+        taskValues.every((val) => val === "✓")
+      ) {
+        statusClass = "atm-btn-done"; // Barchasi bajarilgan (barchasi ✓)
+      }
+
+      // Bankomat nomi (Text Button)
+      const nameTd = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.className = `btn-atm-name ${statusClass}`;
+      btn.innerText = `#${atm.id}. ${atm.name}`;
+      btn.onclick = () => openAtmStatusEditModal(atm.id);
+      nameTd.appendChild(btn);
+      row.appendChild(nameTd);
+
+      // Status ustunlari
+      db.selectedTasks.forEach((taskName) => {
+        const td = document.createElement("td");
+        td.className = "status-cell";
+        const val = atmTasks[taskName] || "▢";
+        td.innerText = val;
+
+        if (val === "✓") td.classList.add("status-success");
+        else if (val === "✕") td.classList.add("status-danger");
+        else td.classList.add("status-neutral");
+
+        row.appendChild(td);
+      });
+
+      tbody.appendChild(row);
+    });
+  }
+
+  table.appendChild(tbody);
+  return table;
+}
+
+// 1. Bankomatlar tanlash Modali (Topshiriq)
+function openTopshiriqAtmModal() {
+  const listEl = document.getElementById("topshiriq-atm-checkbox-list");
+  listEl.innerHTML = "";
+
+  if (db.baza.length === 0) {
+    alert("Avval Baza bo'limida Excel fayl import qiling!");
+    return;
+  }
+
+  const groups = {};
+  db.baza.forEach((atm) => {
+    const groupName = atm.group || "Umumiy";
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(atm);
+  });
+
+  Object.keys(groups).forEach((groupName, index) => {
+    const groupAtms = groups[groupName];
+    const allChecked = groupAtms.every((atm) =>
+      db.topshiriqAtms.includes(atm.id),
+    );
+
+    const groupWrapper = document.createElement("div");
+    groupWrapper.className = "group-wrapper";
+
+    const groupHeader = document.createElement("div");
+    groupHeader.className = "group-header";
+    groupHeader.innerHTML = `
+      <div class="group-title-area">
+        <input type="checkbox" class="top-group-checkbox" data-group="${groupName}" ${allChecked ? "checked" : ""} onchange="toggleTopGroupCheck(this, '${groupName}')">
+        <strong onclick="toggleGroupAccordion('top-group-items-${index}', this.closest('.group-wrapper'))" style="cursor:pointer;">📂 ${groupName} (${groupAtms.length} ta)</strong>
+      </div>
+      <span class="accordion-icon" onclick="toggleGroupAccordion('top-group-items-${index}', this.closest('.group-wrapper'))">▼</span>
+    `;
+
+    const itemsContainer = document.createElement("div");
+    itemsContainer.id = `top-group-items-${index}`;
+    itemsContainer.className = "group-items hidden";
+
+    groupAtms.forEach((atm) => {
+      const isChecked = db.topshiriqAtms.includes(atm.id) ? "checked" : "";
+      const item = document.createElement("label");
+      item.className = "checkbox-item";
+      item.innerHTML = `
+        <input type="checkbox" class="top-atm-checkbox" data-group="${groupName}" value="${atm.id}" ${isChecked} onchange="updateTopGroupCheckboxState('${groupName}')">
+        <span class="color-dot" style="background:${atm.color}"></span>
+        <span>#${atm.id}. ${atm.name}</span>
+      `;
+      itemsContainer.appendChild(item);
+    });
+
+    groupWrapper.appendChild(groupHeader);
+    groupWrapper.appendChild(itemsContainer);
+    listEl.appendChild(groupWrapper);
+  });
+
+  document.getElementById("topshiriq-atm-modal").classList.remove("hidden");
+}
+
+function toggleTopGroupCheck(groupMasterCb, groupName) {
+  const isChecked = groupMasterCb.checked;
+  const atmCheckboxes = document.querySelectorAll(
+    `.top-atm-checkbox[data-group="${groupName}"]`,
+  );
+  atmCheckboxes.forEach((cb) => {
+    cb.checked = isChecked;
+  });
+}
+
+function updateTopGroupCheckboxState(groupName) {
+  const masterCb = document.querySelector(
+    `.top-group-checkbox[data-group="${groupName}"]`,
+  );
+  const atmCheckboxes = document.querySelectorAll(
+    `.top-atm-checkbox[data-group="${groupName}"]`,
+  );
+  const allChecked = Array.from(atmCheckboxes).every((cb) => cb.checked);
+  if (masterCb) masterCb.checked = allChecked;
+}
+
+function closeTopshiriqAtmModal() {
+  document.getElementById("topshiriq-atm-modal").classList.add("hidden");
+}
+
+function saveTopshiriqAtms() {
+  const checkboxes = document.querySelectorAll(".top-atm-checkbox");
+  const selected = [];
+  checkboxes.forEach((cb) => {
+    if (cb.checked) selected.push(parseInt(cb.value));
+  });
+  db.topshiriqAtms = selected;
+  saveData();
+  closeTopshiriqAtmModal();
+}
+
+// 2. Topshiriqlar listini tanlash Modali
+function openTopshiriqTaskModal() {
+  const listEl = document.getElementById("topshiriq-task-checkbox-list");
+  listEl.innerHTML = "";
+
+  DEFAULT_TASKS_LIST.forEach((taskName, idx) => {
+    const isChecked = db.selectedTasks.includes(taskName) ? "checked" : "";
+    const item = document.createElement("label");
+    item.className = "checkbox-item";
+    item.innerHTML = `
+      <input type="checkbox" class="task-checkbox" value="${taskName}" ${isChecked}>
+      <span>${taskName}</span>
+    `;
+    listEl.appendChild(item);
+  });
+
+  document.getElementById("topshiriq-task-modal").classList.remove("hidden");
+}
+
+function closeTopshiriqTaskModal() {
+  document.getElementById("topshiriq-task-modal").classList.add("hidden");
+}
+
+function saveTopshiriqTasks() {
+  const checkboxes = document.querySelectorAll(".task-checkbox");
+  const selected = [];
+  checkboxes.forEach((cb) => {
+    if (cb.checked) selected.push(cb.value);
+  });
+  db.selectedTasks = selected;
+  saveData();
+  closeTopshiriqTaskModal();
+}
+
+// 3. Bankomat topshiriqlari holatini o'zgartirish (Radio Buttons)
+function openAtmStatusEditModal(atmId) {
+  currentEditingAtmId = atmId;
+  const atm = db.baza.find((a) => a.id === atmId);
+  if (!atm) return;
+
+  document.getElementById("modal-atm-title").innerText =
+    `#${atm.id}. ${atm.name}`;
+  const listEl = document.getElementById("atm-tasks-status-list");
+  listEl.innerHTML = "";
+
+  const atmTasks = db.topshiriqData[atmId] || {};
+
+  db.selectedTasks.forEach((taskName, idx) => {
+    const currentVal = atmTasks[taskName] || "▢";
+
+    const item = document.createElement("div");
+    item.className = "task-radio-item";
+    item.innerHTML = `
+      <span class="task-name-label">${taskName}</span>
+      <div class="radio-options">
+        <label class="radio-label">
+          <input type="radio" name="task_radio_${idx}" value="✓" ${currentVal === "✓" ? "checked" : ""}>
+          <span class="radio-custom status-success">✓</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="task_radio_${idx}" value="✕" ${currentVal === "✕" ? "checked" : ""}>
+          <span class="radio-custom status-danger">✕</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="task_radio_${idx}" value="▢" ${currentVal === "▢" ? "checked" : ""}>
+          <span class="radio-custom status-neutral">▢</span>
+        </label>
+      </div>
+    `;
+    listEl.appendChild(item);
+  });
+
+  document.getElementById("atm-status-edit-modal").classList.remove("hidden");
+}
+
+function closeAtmStatusEditModal() {
+  document.getElementById("atm-status-edit-modal").classList.add("hidden");
+  currentEditingAtmId = null;
+}
+
+function saveAtmTaskStatus() {
+  if (!currentEditingAtmId) return;
+
+  if (!db.topshiriqData[currentEditingAtmId]) {
+    db.topshiriqData[currentEditingAtmId] = {};
+  }
+
+  db.selectedTasks.forEach((taskName, idx) => {
+    const radios = document.getElementsByName(`task_radio_${idx}`);
+    let selectedVal = "▢";
+    radios.forEach((r) => {
+      if (r.checked) selectedVal = r.value;
+    });
+    db.topshiriqData[currentEditingAtmId][taskName] = selectedVal;
+  });
+
+  saveData();
+  closeAtmStatusEditModal();
 }
