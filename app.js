@@ -591,11 +591,43 @@ function showUserMarker(coords) {
 // 5-OYNA: TOPSHIRIKLAR MANIQLARI
 // ==========================================
 
+// Dropdown menyuni ochish / yopish
+function toggleTaskDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById("task-dropdown-menu");
+  dropdown.classList.toggle("show");
+}
+
+// Ekran bo'sh joyi bosilganda dropdown menyuni avtomatik yopish
+window.addEventListener("click", () => {
+  const dropdown = document.getElementById("task-dropdown-menu");
+  if (dropdown && dropdown.classList.contains("show")) {
+    dropdown.classList.remove("show");
+  }
+});
+
+// Barcha topshiriq statuslarini nolga tushirish (Tozalash)
+function resetAllTaskStatuses() {
+  // Dropdown menyuni yopish
+  const dropdown = document.getElementById("task-dropdown-menu");
+  if (dropdown) dropdown.classList.remove("show");
+
+  showConfirm(
+    "Haqiqatan ham barcha bankomatlarning topshiriq bajarilish holatlarini tozalamoqchimisiz?",
+    function () {
+      db.topshiriqData = {}; // Barcha belgilangan statuslarni tozalaymiz
+      saveData(); // Baza holatini saqlaymiz va ko'rinishni yangilaymiz (saveDb o'rniga saveData)
+    },
+  );
+}
+
 function renderTopshiriqView() {
   const uncompletedWrapper = document.getElementById(
     "uncompleted-table-wrapper",
   );
   const completedWrapper = document.getElementById("completed-table-wrapper");
+
+  if (!uncompletedWrapper || !completedWrapper) return;
 
   uncompletedWrapper.innerHTML = "";
   completedWrapper.innerHTML = "";
@@ -633,7 +665,6 @@ function renderTopshiriqView() {
   uncompletedWrapper.appendChild(buildTaskTable(uncompletedAtms));
   completedWrapper.appendChild(buildTaskTable(completedAtms));
 }
-
 function buildTaskTable(atms) {
   const table = document.createElement("table");
   table.className = "task-table";

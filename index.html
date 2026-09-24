@@ -102,13 +102,28 @@
       <section id="view-topshiriq" class="view">
         <header class="page-header">
           <h2>📝 Topshiriqlar</h2>
-          <div class="btn-group">
-            <button class="btn btn-primary" onclick="openTopshiriqAtmModal()">
-              Bankomatlar
+
+          <!-- DROPDOWN MENYU -->
+          <div class="dropdown">
+            <button
+              class="btn-icon"
+              onclick="toggleTaskDropdown(event)"
+              title="Menyu"
+            >
+              ⋮
             </button>
-            <button class="btn btn-primary" onclick="openTopshiriqTaskModal()">
-              Topshiriqlar
-            </button>
+            <div id="task-dropdown-menu" class="dropdown-menu">
+              <button onclick="openTopshiriqAtmModal()">
+                🏧 Bankomatlarni tanlash
+              </button>
+              <button onclick="openTopshiriqTaskModal()">
+                📋 Topshiriqlarni tanlash
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="danger-item" onclick="resetAllTaskStatuses()">
+                🧹 Statuslarni tozalash
+              </button>
+            </div>
           </div>
         </header>
 

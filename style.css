@@ -630,3 +630,132 @@ html {
   color: #2563eb; /* Yakunlanmagan (Ko'k/Neytral) */
   background-color: #eff6ff;
 }
+
+/* --- DROPDOWN MENYU STILLARI --- */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* 3 ta nuqta ikonka-tugmasi */
+.btn-icon {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: #334155;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.btn-icon:hover {
+  background-color: #f1f5f9;
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* Dropdown kontent popoveri */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 110%;
+  background-color: #ffffff;
+  min-width: 220px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  z-index: 100;
+  padding: 6px 0;
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  display: block;
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-menu button {
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 0.92rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-menu button:hover {
+  background-color: #f8fafc;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 4px 0;
+}
+
+.dropdown-menu button.danger-item {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.dropdown-menu button.danger-item:hover {
+  background-color: #fef2f2;
+}
+
+/* --- BANKOMAT TEXT-BUTTON STILLARI --- */
+.btn-atm-name {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition:
+    transform 0.1s ease,
+    opacity 0.1s ease,
+    background-color 0.2s ease;
+  user-select: none;
+}
+
+.btn-atm-name:active {
+  transform: scale(0.93);
+  opacity: 0.8;
+}
+
+.btn-atm-name.atm-btn-done {
+  color: #16a34a;
+  background-color: #f0fdf4;
+}
+
+.btn-atm-name.atm-btn-failed {
+  color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.btn-atm-name.atm-btn-pending {
+  color: #2563eb;
+  background-color: #eff6ff;
+}
