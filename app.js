@@ -468,7 +468,7 @@ async function executeFinishDay() {
     // Ism ustiga bosilganda profiliga/lichkasiga o'tadigan HTML havola
     const userLink = `<a href="tg://user?id=${userId}">${fullName}</a>`;
 
-    workerInfo = `${(<b>userLink</b>)} (${username} | ID: <code>${userId}</code>)`;
+    workerInfo = `${userLink} (${username} | ID: <code>${userId}</code>)`;
   }
 
   // Telegramga yuboriladigan yakuniy hisobot matni
