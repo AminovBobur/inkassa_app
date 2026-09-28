@@ -458,11 +458,17 @@ async function executeFinishDay() {
 
   // Mas'ul xodim ma'lumoti
   let workerInfo = "Noma'lum xodim";
+
   if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
     const u = tg.initDataUnsafe.user;
-    const name = `${u.first_name || ""} ${u.last_name || ""}`.trim();
-    const username = u.username ? ` (@${u.username})` : "";
-    workerInfo = `${name}${username}`.trim();
+    const fullName = `${u.first_name || ""} ${u.last_name || ""}`.trim();
+    const username = u.username ? ` (@${u.username})` : "No Username";
+    const userId = u.id;
+
+    // Ism ustiga bosilganda profiliga/lichkasiga o'tadigan HTML havola
+    const userLink = `<a href="tg://user?id=${userId}">${fullName}</a>`;
+
+    workerInfo = `${(<b>userLink</b>)} (${username} | ID: <code>${userId}</code>)`;
   }
 
   // Telegramga yuboriladigan yakuniy hisobot matni
