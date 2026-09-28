@@ -462,13 +462,13 @@ async function executeFinishDay() {
   if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
     const u = tg.initDataUnsafe.user;
     const fullName = `${u.first_name || ""} ${u.last_name || ""}`.trim();
-    const username = u.username ? ` (@${u.username})` : "No Username";
+    const username = u.username ? ` @${u.username} | ` : "";
     const userId = u.id;
 
     // Ism ustiga bosilganda profiliga/lichkasiga o'tadigan HTML havola
     const userLink = `<a href="tg://user?id=${userId}">${fullName}</a>`;
 
-    workerInfo = `${userLink} (${username} | ID: <code>${userId}</code>)`;
+    workerInfo = `${userLink} (${username}ID: <code>${userId}</code>)`;
   }
 
   // Telegramga yuboriladigan yakuniy hisobot matni
