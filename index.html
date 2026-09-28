@@ -53,8 +53,8 @@
             <button class="btn btn-primary" onclick="openSelectModal()">
               Belgilash
             </button>
-            <button class="btn btn-danger" onclick="clearMarshrutData()">
-              Tozalash
+            <button class="btn btn-danger" onclick="finishDay()">
+              Yakunlash
             </button>
           </div>
         </header>
@@ -250,6 +250,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Full-screen Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="loader-content">
+        <div class="spinner"></div>
+        <p>Kun yakunlanmoqda, kuting ...</p>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="toast hidden"></div>
 
     <script src="app.js"></script>
   </body>

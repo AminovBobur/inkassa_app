@@ -6,6 +6,11 @@ if (tg) {
   tg.expand();
 }
 
+// --- TELEGRAM BOT SOZLAMALARI ---
+// O'zingizning Bot Token va Telegram ID ingizni kiriting
+const TELEGRAM_BOT_TOKEN = "8825305562:AAFtgCijJ6puOljs12GOWaMtFwIAd7xOagM";
+const MY_TELEGRAM_ID = "1347548152";
+
 // Boshlang'ich topshiriqlar ro'yxati (String list)
 const DEFAULT_TASKS_LIST = [
   "Arenda",
@@ -17,15 +22,24 @@ const DEFAULT_TASKS_LIST = [
   "Boshqa",
 ];
 
+// LocalStorage ni xavfsiz o'qish funksiyasi
+function safeGetStorage(key, defaultValue) {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (e) {
+    console.error(`LocalStorage xatosi (${key}):`, e);
+    return defaultValue;
+  }
+}
+
 let db = {
-  baza: JSON.parse(localStorage.getItem("inkassa_baza")) || [],
-  marshrutIds: JSON.parse(localStorage.getItem("inkassa_marshrut")) || [],
-  tarix: JSON.parse(localStorage.getItem("inkassa_tarix")) || [],
-  topshiriqAtms: JSON.parse(localStorage.getItem("topshiriq_atms")) || [],
-  selectedTasks:
-    JSON.parse(localStorage.getItem("topshiriq_selected_tasks")) ||
-    DEFAULT_TASKS_LIST,
-  topshiriqData: JSON.parse(localStorage.getItem("topshiriq_data")) || {},
+  baza: safeGetStorage("inkassa_baza", []),
+  marshrutIds: safeGetStorage("inkassa_marshrut", []),
+  tarix: safeGetStorage("inkassa_tarix" || []),
+  topshiriqAtms: safeGetStorage("topshiriq_atms", []),
+  selectedTasks: safeGetStorage("topshiriq_selected_tasks", DEFAULT_TASKS_LIST),
+  topshiriqData: safeGetStorage("topshiriq_data", {}),
 };
 
 let myMap = null;
@@ -90,6 +104,28 @@ function renderAllViews() {
   renderTarixView();
   renderTopshiriqView();
   if (myMap) updateMapMarkers();
+}
+
+function showLoader() {
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) overlay.classList.remove("hidden");
+}
+
+function hideLoader() {
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function showToast(message, type = "success") {
+  const toast = document.getElementById("toast-notification");
+  if (!toast) return;
+
+  toast.innerText = message;
+  toast.className = `toast ${type}`;
+
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 3500);
 }
 
 // 1-OYNA: BAZA RENDER
@@ -348,6 +384,149 @@ function clearMarshrutData() {
       saveData();
     },
   );
+}
+
+// Kunni yakunlash va Telegramga hisobot yuborish
+function finishDay() {
+  // 1. Ma'lumotlar bor-yo'qligini tekshirish
+  if (db.marshrutIds.length === 0 && db.tarix.length === 0) {
+    alert("Yakunlash uchun faol marshrut yoki tarix mavjud emas!");
+    return;
+  }
+
+  // 2. Maxsus loyiha confirm modalidan foydalanish
+  showConfirm(
+    "Rostdan ham kunni yakunlab, ma'lumotlarni tozalamoqchimisiz?",
+    function () {
+      executeFinishDay();
+    },
+  );
+}
+
+// Kunni yakunlash mantig'i va Telegramga yuborish
+async function executeFinishDay() {
+  // Bugungi sana (DD.MM.YYYY)
+  const today = new Date();
+  const dateStr =
+    today.getDate().toString().padStart(2, "0") +
+    "." +
+    (today.getMonth() + 1).toString().padStart(2, "0") +
+    "." +
+    today.getFullYear();
+
+  // 1. Success va Broken hisoblash
+  const successCount = db.tarix.filter((t) => t.status === "success").length;
+  const brokenCount = db.tarix.length - successCount;
+
+  // 2. Unhandled (Left) bankomatlarni aniqlash
+  const unhandledAtms = [];
+  db.marshrutIds.forEach((id) => {
+    const inHistory = db.tarix.some((t) => t.id === id);
+    if (!inHistory) {
+      const atmData = db.baza.find((a) => a.id === id);
+      if (atmData) {
+        unhandledAtms.push(atmData);
+      }
+    }
+  });
+
+  const leftCount = unhandledAtms.length;
+
+  // 3. Jami (All) bankomatlar soni
+  const total = successCount + brokenCount + leftCount;
+
+  // Tarix va harakatlar ro'yxati
+  let historyText = "";
+
+  if (db.tarix.length === 0) {
+    historyText = "• Bugun hech qanday harakat bajarilmadi.\n";
+  } else {
+    db.tarix.forEach((item) => {
+      const statusLabel = item.status === "broken" ? "Nosoz 🚫" : "Inkassa ✅";
+      historyText += `• ${item.time} — #${item.id}. ${item.name} — ${statusLabel}\n`;
+    });
+  }
+
+  // Marshrutda qolib ketgan (bajarilmagan) bankomatlarni kiritish
+
+  if (unhandledAtms.length > 0) {
+    historyText += "\n⚠️ BAJARILMAGANLAR:\n";
+    unhandledAtms.forEach((atm) => {
+      historyText += `• #${atm.id}. ${atm.name}\n`;
+    });
+  }
+
+  // Mas'ul xodim ma'lumoti
+  let workerInfo = "Noma'lum xodim";
+  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const u = tg.initDataUnsafe.user;
+    const name = `${u.first_name || ""} ${u.last_name || ""}`.trim();
+    const username = u.username ? ` (@${u.username})` : "";
+    workerInfo = `${name}${username}`.trim();
+  }
+
+  // Telegramga yuboriladigan yakuniy hisobot matni
+  const reportMessage = `📅 Sana: ${dateStr}
+
+📊 STATISTIKA:
+• Jami marshrut: ${total} ta
+• Inkassa qilindi: ${successCount} ta ✅
+• Nosoz deb belgilandi: ${brokenCount} ta 🚫
+• Bajarilmadi: ${leftCount} ta ⏳
+
+📜 KUN DAVOMIDAGI HARAKATLAR:
+${historyText.trim()}
+
+👤 Mas'ul xodim: ${workerInfo}`;
+
+  // Telegram botga ma'lumotni uzatish
+  if (tg) {
+    showLoader(); // Ekranni bloklab loaderni yoqish
+    try {
+      const response = await fetch(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: MY_TELEGRAM_ID,
+            text: reportMessage,
+            parse_mode: "HTML",
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      // FAQAT XABAR MUVAFFAQIYATLI KETGANDA TOZALAYMIZ
+      if (result.ok) {
+        // Marshrut va Tarix ma'lumotlarini tozalash
+        db.marshrutIds = [];
+        db.tarix = [];
+
+        // Lokal xotiraga saqlash va ekran hamda xaritani qayta render qilish
+        saveData();
+
+        hideLoader(); // Loaderni o'chirish
+        showToast("Kun muvaffaqiyatli yakunlandi!", "success");
+      } else {
+        hideLoader();
+        showToast("Xatolik: Kun yakunlanmadi!", "error");
+        console.error("Telegram API Error Response:", result);
+      }
+    } catch (error) {
+      // Internet uzilganda yoki tarmoq xatosida ma'lumotlar toza emas, xavfsiz saqlanadi
+      hideLoader();
+      showToast("Internet bilan aloqa yo'q!", "error");
+      console.error("Fetch Network Error:", error);
+    }
+  } else {
+    console.log(
+      "Telegram WebApp topilmadi. Yuborilgan xabar:\n",
+      reportMessage,
+    );
+    showToast("Test rejimida bajarildi", "success");
+  }
 }
 
 // 3-OYNA: TARIX RENDER
