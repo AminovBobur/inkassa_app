@@ -662,10 +662,12 @@ function renderTopshiriqView() {
   if (doneEl) doneEl.innerText = completedAtms.length;
   if (leftEl) leftEl.innerText = uncompletedAtms.length;
 
-  uncompletedWrapper.appendChild(buildTaskTable(uncompletedAtms));
-  completedWrapper.appendChild(buildTaskTable(completedAtms));
+  // Ikkinchi parametr isCompleted: bajarilmaganlar uchun false, bajarilganlar uchun true
+  uncompletedWrapper.appendChild(buildTaskTable(uncompletedAtms, false));
+  completedWrapper.appendChild(buildTaskTable(completedAtms, true));
 }
-function buildTaskTable(atms) {
+
+function buildTaskTable(atms, isCompleted = false) {
   const table = document.createElement("table");
   table.className = "task-table";
 
@@ -739,8 +741,37 @@ function buildTaskTable(atms) {
       tbody.appendChild(row);
     });
   }
-
   table.appendChild(tbody);
+
+  // Footer (Faqat bajarilganlar jadvali uchun hamda ma'lumot bo'lganda hisoblanadi)
+  if (isCompleted && atms.length > 0) {
+    const tfoot = document.createElement("tfoot");
+    const footerRow = document.createElement("tr");
+
+    const labelTd = document.createElement("td");
+    labelTd.className = "summary-label";
+    labelTd.innerText = "Natija:";
+    footerRow.appendChild(labelTd);
+
+    db.selectedTasks.forEach((taskName) => {
+      let successCount = 0;
+      atms.forEach((atm) => {
+        const atmTasks = db.topshiriqData[atm.id] || {};
+        if (atmTasks[taskName] === "✓") {
+          successCount++;
+        }
+      });
+
+      const countTd = document.createElement("td");
+      countTd.className = "summary-count-cell";
+      countTd.innerHTML = `<span class="summary-count">${successCount}</span> <span class="summary-check">✓</span>`;
+      footerRow.appendChild(countTd);
+    });
+
+    tfoot.appendChild(footerRow);
+    table.appendChild(tfoot);
+  }
+
   return table;
 }
 

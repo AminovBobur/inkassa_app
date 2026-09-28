@@ -759,3 +759,38 @@ html {
   color: #2563eb;
   background-color: #eff6ff;
 }
+
+/* --- TOPSHIRIQ JADVALI OSTI (TFOOT) STILLARI --- */
+.task-table tfoot tr {
+  border-top: 2px solid #cbd5e1;
+  background-color: #f1f5f9;
+}
+
+.task-table tfoot td {
+  padding: 8px 10px;
+  font-weight: 700;
+}
+
+.summary-label {
+  text-align: center;
+  color: #1e293b;
+  font-size: 0.85rem;
+  background-color: #f1f5f9;
+}
+
+.summary-count-cell {
+  color: #16a34a;
+  font-size: 0.95rem;
+}
+
+.summary-count {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.summary-check {
+  font-size: 0.85rem;
+  color: #16a34a;
+  margin-left: 4px;
+}
